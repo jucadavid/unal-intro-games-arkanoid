@@ -1,0 +1,82 @@
+using UnityEngine;
+using Random = UnityEngine.Random;
+
+public class Ball : MonoBehaviour
+{
+    private const float BALL_VELOCITY_MIN_AXIS_VALUE = 0.5f;
+
+    [SerializeField]
+    private float _initSpeed = 5;
+    [SerializeField]
+    private float _minSpeed = 4;
+    [SerializeField]
+    private float _maxSpeed = 7;
+
+    private Rigidbody2D _rb;
+    private Collider2D _collider;
+
+    public void Init()
+    {
+        _rb = GetComponent<Rigidbody2D>();
+        _collider = GetComponent<Collider2D>();
+        
+        _collider.enabled = true;
+        _rb.velocity = Random.insideUnitCircle.normalized * _initSpeed;
+    }
+
+    void FixedUpdate()
+    {
+        CheckVelocity();
+    }
+
+    private void CheckVelocity()
+    {
+        Vector2 velocity = _rb.velocity;
+        float curretSpeed = velocity.magnitude;
+
+        if (curretSpeed < _minSpeed) {
+            _rb.velocity = velocity.normalized * _minSpeed;
+        }
+        else if (curretSpeed > _maxSpeed) {
+            _rb.velocity = velocity.normalized * _maxSpeed;
+        }
+
+        if (Mathf.Abs(velocity.x) < BALL_VELOCITY_MIN_AXIS_VALUE) 
+        {
+            velocity.x += Mathf.Sign(velocity.x) * BALL_VELOCITY_MIN_AXIS_VALUE * Time.deltaTime;
+            _rb.velocity = velocity;
+        }
+        else if (Mathf.Abs(velocity.y) < BALL_VELOCITY_MIN_AXIS_VALUE)
+        {   
+            velocity.y += Mathf.Sign(velocity.y) * BALL_VELOCITY_MIN_AXIS_VALUE * Time.deltaTime;
+            _rb.velocity = velocity;
+        }
+
+    }
+
+    private void OnCollisionEnter2D(Collision2D other)
+    {
+        BlockTile blockTileHit;
+        if (!other.collider.TryGetComponent(out blockTileHit))
+        {
+            return;
+        }
+
+        ContactPoint2D contactPoint = other.contacts[0];
+        blockTileHit.OnHitCollision(contactPoint);
+    }
+
+    public void Hide()
+    {
+        _collider.enabled = false;
+        gameObject.SetActive(false);
+    }
+
+    public void IncreaseVelocity() {
+        _rb.velocity = _rb.velocity.normalized * _maxSpeed;
+    }
+
+    public void DecreaseVelocity() {
+        _rb.velocity = _rb.velocity.normalized * _minSpeed;
+    }
+}
